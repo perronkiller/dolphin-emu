@@ -262,8 +262,6 @@ void Init()
 
 		if (Movie::IsRecordingInput() || Movie::IsPlayingInput())
 			AddDevice(Movie::IsUsingPad(i) ?  (Movie::IsUsingBongo(i) ? SIDEVICE_GC_TARUKONGA : SIDEVICE_GC_CONTROLLER) : SIDEVICE_NONE, i);
-		else if (NetPlay::IsNetPlayRunning())
-			AddDevice((SIDevices) g_NetPlaySettings.m_Controllers[i], i);
 		else
 			AddDevice(SConfig::GetInstance().m_SIDevice[i], i);
 	}
@@ -567,7 +565,12 @@ void AddDevice(ISIDevice* pDevice)
 
 void AddDevice(const SIDevices _device, int _iDeviceNumber)
 {
-	ISIDevice* pDevice = SIDevice_Create(_device, _iDeviceNumber);
+	ISIDevice *pDevice;
+	pDevice = g_Channel[_iDeviceNumber].m_pDevice;
+	if (pDevice && pDevice->GetDeviceType() == _device)
+		return;
+
+	pDevice = SIDevice_Create(_device, _iDeviceNumber);
 	AddDevice(pDevice);
 }
 
