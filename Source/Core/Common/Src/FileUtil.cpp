@@ -665,7 +665,27 @@ const std::string& GetUserPath(const unsigned int DirIDX, const std::string &new
 	if (paths[D_USER_IDX].empty())
 	{
 #ifdef _WIN32
-		paths[D_USER_IDX] = GetExeDirectory() + DIR_SEP USERDATA_DIR DIR_SEP;
+		HKEY hkey;
+		DWORD local = 0;
+		if (RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Dolphin-emu"), NULL, KEY_QUERY_VALUE, &hkey) == ERROR_SUCCESS)
+		{
+			DWORD size;
+			RegQueryValueEx(hkey, TEXT("LocalUserConfig"), NULL, NULL, reinterpret_cast<LPBYTE>(&local), &size);
+		}
+
+		if (!local)
+		{
+			WCHAR my_documents[MAX_PATH];
+			HRESULT result = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS, NULL, SHGFP_TYPE_CURRENT, my_documents);
+			if (result == S_OK)
+				paths[D_USER_IDX] = UTF16ToUTF8(my_documents) + "/Dolphin-emu/";
+			else
+				paths[D_USER_IDX] = GetExeDirectory() + DIR_SEP USERDATA_DIR DIR_SEP;
+		}
+		else 
+		{
+			paths[D_USER_IDX] = GetExeDirectory() + DIR_SEP USERDATA_DIR DIR_SEP;
+		}
 #else
 		if (File::Exists(ROOT_DIR DIR_SEP USERDATA_DIR))
 			paths[D_USER_IDX] = ROOT_DIR DIR_SEP USERDATA_DIR DIR_SEP;
