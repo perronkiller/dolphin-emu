@@ -675,10 +675,10 @@ const std::string& GetUserPath(const unsigned int DirIDX, const std::string &new
 
 		if (!local)
 		{
-			WCHAR my_documents[MAX_PATH];
+			TCHAR my_documents[MAX_PATH];
 			HRESULT result = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS, NULL, SHGFP_TYPE_CURRENT, my_documents);
 			if (result == S_OK)
-				paths[D_USER_IDX] = UTF16ToUTF8(my_documents) + "/Dolphin-emu/";
+				paths[D_USER_IDX] = TStrToUTF8(my_documents) + "/Dolphin-emu/";
 			else
 				paths[D_USER_IDX] = GetExeDirectory() + DIR_SEP USERDATA_DIR DIR_SEP;
 		}
