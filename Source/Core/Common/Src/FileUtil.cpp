@@ -667,24 +667,42 @@ const std::string& GetUserPath(const unsigned int DirIDX, const std::string &new
 #ifdef _WIN32
 		HKEY hkey;
 		DWORD local = 0;
+		bool localExists = false;
+		TCHAR configPath[MAX_PATH];
 		if (RegOpenKeyEx(HKEY_CURRENT_USER, TEXT("Software\\Dolphin-emu"), NULL, KEY_QUERY_VALUE, &hkey) == ERROR_SUCCESS)
 		{
-			DWORD size;
-			RegQueryValueEx(hkey, TEXT("LocalUserConfig"), NULL, NULL, reinterpret_cast<LPBYTE>(&local), &size);
+			DWORD size = 4;
+			if (RegQueryValueEx(hkey, TEXT("LocalUserConfig"), NULL, NULL, reinterpret_cast<LPBYTE>(&local), &size) == ERROR_SUCCESS)
+			{
+				localExists = true;
+			}
+			size = MAX_PATH;
+			RegQueryValueEx(hkey, TEXT("UserConfigPath"), NULL, NULL, (LPBYTE)configPath, &size);
+			RegCloseKey(hkey);
 		}
 
-		if (!local)
+		if (configPath[0] && !(localExists && local))
 		{
-			TCHAR my_documents[MAX_PATH];
-			HRESULT result = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS, NULL, SHGFP_TYPE_CURRENT, my_documents);
-			if (result == S_OK)
-				paths[D_USER_IDX] = TStrToUTF8(my_documents) + "/Dolphin-emu/";
-			else
-				paths[D_USER_IDX] = GetExeDirectory() + DIR_SEP USERDATA_DIR DIR_SEP;
+			if (File::IsDirectory(TStrToUTF8(configPath)))
+			{
+				paths[D_USER_IDX] = TStrToUTF8(configPath) + DIR_SEP;
+			}
 		}
-		else 
+		if (paths[D_USER_IDX].empty())
 		{
-			paths[D_USER_IDX] = GetExeDirectory() + DIR_SEP USERDATA_DIR DIR_SEP;
+			if (!local)
+			{
+				TCHAR my_documents[MAX_PATH];
+				HRESULT result = SHGetFolderPath(NULL, CSIDL_MYDOCUMENTS, NULL, SHGFP_TYPE_CURRENT, my_documents);
+				if (result == S_OK)
+					paths[D_USER_IDX] = TStrToUTF8(my_documents) + "/Dolphin-emu/";
+				else
+					paths[D_USER_IDX] = GetExeDirectory() + DIR_SEP USERDATA_DIR DIR_SEP;
+			}
+			else
+			{
+				paths[D_USER_IDX] = GetExeDirectory() + DIR_SEP USERDATA_DIR DIR_SEP;
+			}
 		}
 #else
 		if (File::Exists(ROOT_DIR DIR_SEP USERDATA_DIR))
